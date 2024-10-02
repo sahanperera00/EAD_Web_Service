@@ -26,7 +26,7 @@ public class CategoryController(ICategoryService _categoryService) : ControllerB
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,CSR,Vendor")]
+    [Authorize(Roles = "Admin,Vendor")]
     public async Task<IActionResult> CreateCategory(CategoryDto categoryDto)
     {
         if (categoryDto == null ||
@@ -41,11 +41,11 @@ public class CategoryController(ICategoryService _categoryService) : ControllerB
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the category");
         }
-        return Ok("Category created successfully");
+        return Ok(response);
     }
     
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,CSR,Vendor")]
+    [Authorize(Roles = "Admin,Vendor")]
     public async Task<IActionResult> UpdateCategory(string id, CategoryDto categoryDto)
     {
         if (categoryDto == null)
@@ -66,7 +66,7 @@ public class CategoryController(ICategoryService _categoryService) : ControllerB
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the category");
         }
-        return Ok("Category updated successfully");
+        return Ok(response);
     }
 
     [HttpDelete("{id}")]

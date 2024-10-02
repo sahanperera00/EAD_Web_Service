@@ -49,7 +49,7 @@ public class ProductController(IProductService _productService, IVendorService _
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the Product");
         }
-        return Ok("Product created successfully");
+        return Ok(response);
     }
 
     [HttpPut("{id}")]
@@ -76,7 +76,7 @@ public class ProductController(IProductService _productService, IVendorService _
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to update the product");
         }
-        return Ok("Product updated successfully");
+        return Ok(response);
     }
 
     [HttpDelete("{id}")]

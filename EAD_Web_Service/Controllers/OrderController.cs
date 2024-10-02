@@ -66,7 +66,7 @@ public class OrderController(IOrderService _orderService, ICartService _cartServ
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the order.");
         }
-        return Ok("Order created successfully and cart deleted.");
+        return Ok(orderResponse);
     }
 
     [HttpPut("update/{orderId}")]

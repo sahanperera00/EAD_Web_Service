@@ -31,7 +31,7 @@ public class Order
 
     [BsonElement("status")]
     [BsonRepresentation(BsonType.String)]
-    public OrderStatus Status { get; set; } = OrderStatus.Processing;
+    public OrderStatus? Status { get; set; } = OrderStatus.Processing;
     [BsonElement("isCancelRequested")]
     public bool IsCancelRequested { get; set; } = false;
     [BsonElement("note")]

@@ -35,7 +35,7 @@ public class CategoryService : ICategoryService
     {
         var categoryEntity = _mapper.Map<Category>(categoryDto);
 
-        categoryEntity.IsActive = false;
+        categoryEntity.IsActive = categoryDto.IsActive || false;
         categoryEntity.CreatedAt = DateTime.UtcNow;
         categoryEntity.UpdatedAt = DateTime.UtcNow;
 

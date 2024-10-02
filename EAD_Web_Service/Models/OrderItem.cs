@@ -19,5 +19,5 @@ public class OrderItem
     public decimal Price { get; set; }
     [BsonElement("status")]
     [BsonRepresentation(BsonType.String)]
-    public ItemStatus Status { get; set; } = ItemStatus.Processing;
+    public ItemStatus? Status { get; set; } = ItemStatus.Processing;
 }
