@@ -12,11 +12,15 @@ public class OrderItem
     [BsonElement("productId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string ProductId { get; set; }
+    [BsonElement("name")]
+    public string Name { get; set; }
     [BsonElement("quantity")]
     public int Quantity { get; set; }
     [BsonElement("price")]
     [BsonRepresentation(BsonType.Decimal128)]
     public decimal Price { get; set; }
+    [BsonElement("images")]
+    public List<string> Images { get; set; }
     [BsonElement("status")]
     [BsonRepresentation(BsonType.String)]
     public ItemStatus Status { get; set; } = ItemStatus.Processing;

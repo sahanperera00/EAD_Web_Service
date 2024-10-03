@@ -10,7 +10,7 @@ public interface IOrderService
     Task<List<OrderDto>> GetAllOrdersAsync();
     Task<List<OrderDto>> GetOrdersByUserIdAsync(string userId);
     Task<OrderDto?> GetOrderByIdAsync(string orderId);
-    Task<OrderDto> CreateOrderAsync(string userId, OrderDto orderDtod);
+    Task<OrderDto> CreateOrderAsync(string userId, OrderRequestDto orderRequestDto, CartDto cart);
     Task<OrderDto?> UpdateOrderAsync(string orderId, OrderDto OrderDto);
     Task<bool> CancelOrderAsync(string orderId);
     Task<bool> RequestOrderCancellationAsync(CancelOrderRequestDto cancelOrderRequestDto);

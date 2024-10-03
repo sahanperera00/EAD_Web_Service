@@ -13,10 +13,6 @@ public class Order
     [BsonElement("userId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public required string UserId { get; set; }
-
-    [BsonElement("cartId")]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public required string CartId { get; set; }
     [BsonElement("phoneNumber")]
     public required string PhoneNumber { get; set; }
     [BsonElement("deliveryAddress")]

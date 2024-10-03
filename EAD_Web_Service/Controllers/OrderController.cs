@@ -44,7 +44,7 @@ public class OrderController(IOrderService _orderService, ICartService _cartServ
 
     [HttpPost]
     [Authorize(Roles = "Customer")]
-    public async Task<IActionResult> CreateOrder(OrderDto orderDto)
+    public async Task<IActionResult> CreateOrder(OrderRequestDto orderRequestDto)
     {
         var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -53,19 +53,15 @@ public class OrderController(IOrderService _orderService, ICartService _cartServ
             return BadRequest("Invalid user or permissions.");
         }
 
-        var isCartDeleted = await _cartService.DeleteCartAsync(orderDto.CartId);
-
-        if (!isCartDeleted)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError, "Failed to delete the cart.");
-        }
-
-        var orderResponse = await _orderService.CreateOrderAsync(currentUserId, orderDto);
+        var cart = await _cartService.GetCartByUserIdAsync(currentUserId);
+        var orderResponse = await _orderService.CreateOrderAsync(currentUserId, orderRequestDto, cart);
 
         if (orderResponse == null)
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the order.");
         }
+        await _cartService.DeleteCartAsync(cart.Id);
+        await _cartService.CreateCartAsync(currentUserId);
         return Ok(orderResponse);
     }
 

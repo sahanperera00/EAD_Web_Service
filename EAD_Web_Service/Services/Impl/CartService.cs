@@ -60,6 +60,7 @@ public class CartService : ICartService
 
         if (existingItem != null)
         {
+            existingItem.InventoryCount = product.InventoryCount.Value;
             existingItem.Quantity += quantity;
             cart.TotalPrice += product.Price * quantity;
         }
@@ -68,7 +69,9 @@ public class CartService : ICartService
             var newCartItem = new CartItem
             {
                 ProductId = productId,
+                Name = product.Name,
                 Quantity = quantity,
+                InventoryCount = product.InventoryCount.Value,
                 Price = product.Price
             };
             cart.Items?.Add(newCartItem);

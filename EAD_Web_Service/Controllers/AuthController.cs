@@ -2,13 +2,12 @@
 using EAD_Web_Service.Dtos.request;
 using EAD_Web_Service.Services;
 using EAD_Web_Service.Services.Impl;
-using System.Security.Claims;
 
 namespace EAD_Web_Service.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IUserService _userService, TokenService tokenService) : ControllerBase
+public class AuthController(IUserService _userService, TokenService tokenService, ICartService _cartService) : ControllerBase
 {
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequestDto loginRequestDto)
@@ -36,6 +35,17 @@ public class AuthController(IUserService _userService, TokenService tokenService
         }
 
         var token = tokenService.GenerateToken(user.Id ,user.Email, user.Role);
+        var oldCart = await _cartService.GetCartByUserIdAsync(user.Id);
+
+        if (oldCart == null && user.Role.Equals("Customer"))
+        {
+            var newCart = await _cartService.CreateCartAsync(user.Id);
+
+            if (newCart == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the cart");
+            }
+        }
         return Ok(new { Token = token });
     }
 

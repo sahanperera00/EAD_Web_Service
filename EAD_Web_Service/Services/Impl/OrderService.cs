@@ -43,10 +43,12 @@ public class OrderService : IOrderService
         return order == null ? null : _mapper.Map<OrderDto>(order);
     }
 
-    public async Task<OrderDto> CreateOrderAsync(string userId, OrderDto orderDto)
+    public async Task<OrderDto> CreateOrderAsync(string userId, OrderRequestDto orderRequestDto, CartDto cartDto)
     {
-        orderDto.Id = null;
-        var order = _mapper.Map<Order>(orderDto);
+        var order = _mapper.Map<Order>(orderRequestDto);
+        order.UserId = userId;
+        order.Items = _mapper.Map<List<OrderItem>>(cartDto.Items);
+        order.TotalPrice = cartDto.TotalPrice.Value;
         order.Note = string.Empty;
         order.CreatedAt = DateTime.Now;
         order.UpdatedAt = DateTime.Now;

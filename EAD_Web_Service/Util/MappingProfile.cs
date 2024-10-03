@@ -20,6 +20,7 @@ public class MappingProfile : Profile
         CreateMap<Cart, CartDto>().ReverseMap();
         CreateMap<CartItem, CartItemDto>().ReverseMap();
         CreateMap<Order, OrderDto>().ReverseMap();
+        CreateMap<Order, OrderRequestDto>().ReverseMap();
         CreateMap<OrderItem, OrderItemDto>().ReverseMap();
         CreateMap<Order, CartDto>().ReverseMap();
         CreateMap<OrderItem, CartItemDto>().ReverseMap();
