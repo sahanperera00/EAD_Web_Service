@@ -31,11 +31,11 @@ public class Order
 
     [BsonElement("status")]
     [BsonRepresentation(BsonType.String)]
-    public OrderStatus? Status { get; set; } = OrderStatus.Processing;
+    public OrderStatus Status { get; set; } = OrderStatus.Processing;
     [BsonElement("isCancelRequested")]
     public bool IsCancelRequested { get; set; } = false;
     [BsonElement("note")]
-    public string? Note { get; set; } = string.Empty;
+    public string Note { get; set; }
 
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; }

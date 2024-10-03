@@ -13,7 +13,7 @@ public class ProductController(IProductService _productService, IVendorService _
 {
     [HttpGet("all")]
     public async Task<ActionResult<List<ProductResponseDto>>> GetAllProducts() =>
-        await _productService.GetAllProductsAsync();
+       Ok(await _productService.GetAllProductsAsync());
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductResponseDto>> GetProductById(string id)

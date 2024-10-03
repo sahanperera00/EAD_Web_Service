@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using EAD_Web_Service.Dtos;
 using EAD_Web_Service.Dtos.request;
 using EAD_Web_Service.Dtos.response;
 using EAD_Web_Service.Models;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace EAD_Web_Service.Services.Impl;
@@ -11,6 +13,7 @@ public class ProductService : IProductService
 {
     private readonly IMongoCollection<Product> _productCollection;
     private readonly IMongoCollection<Vendor> _vendorCollection;
+    private readonly IMongoCollection<Category> _categoryCollection;
     private readonly IMapper _mapper;
 
     public ProductService(IOptions<DatabaseSettings> databaseSettings, IMapper mapper)
@@ -19,42 +22,95 @@ public class ProductService : IProductService
         var mongoDatabase = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
         _productCollection = mongoDatabase.GetCollection<Product>(databaseSettings.Value.ProductsCollectionName);
         _vendorCollection = mongoDatabase.GetCollection<Vendor>(databaseSettings.Value.VendorsCollectionName);
+        _categoryCollection = mongoDatabase.GetCollection<Category>(databaseSettings.Value.CategoriesCollectionName);
         _mapper = mapper;
     }
 
     public async Task<List<ProductResponseDto>> GetAllProductsAsync()
     {
-        var products = await _productCollection.Find(product => true).ToListAsync();
-        return _mapper.Map<List<ProductResponseDto>>(products);
+        var aggregationPipeline = new[]
+        {
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Categories" },
+                { "localField", "categoryId" },
+                { "foreignField", "_id" },
+                { "as", "category" }
+            }),
+            new BsonDocument("$unwind", "$category"),
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Vendors" },
+                { "localField", "vendorId" },
+                { "foreignField", "_id" },
+                { "as", "vendor" }
+            }),
+            new BsonDocument("$unwind", new BsonDocument("path", "$vendor").Add("preserveNullAndEmptyArrays", true))
+        };
+        var products = await _productCollection.Aggregate<BsonDocument>(aggregationPipeline).ToListAsync();
+        var productResponseDtos = _mapper.Map<List<ProductResponseDto>>(products);
+        return productResponseDtos;
     }
+
 
     public async Task<ProductResponseDto> GetProductByIdAsync(string productId)
     {
-        var product = await _productCollection.Find(product => product.Id == productId).FirstOrDefaultAsync();
-        return _mapper.Map<ProductResponseDto>(product);
+        var aggregationPipeline = new[]
+        {
+            new BsonDocument("$match", new BsonDocument("_id", new ObjectId(productId))),
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Categories" },
+                { "localField", "categoryId" },
+                { "foreignField", "_id" },
+                { "as", "category" }
+            }),
+            new BsonDocument("$unwind", "$category"),
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Vendors" },
+                { "localField", "vendorId" },
+                { "foreignField", "_id" },
+                { "as", "vendor" }
+            }),
+            new BsonDocument("$unwind", "$vendor")
+        };
+        var product = await _productCollection.Aggregate<BsonDocument>(aggregationPipeline).FirstOrDefaultAsync();
+        if (product == null) { return null; }
+        var productDto = _mapper.Map<ProductResponseDto>(product);
+        return productDto;
     }
+
 
     public async Task<ProductResponseDto?> CreateProductAsync(ProductRequestDto productRequestDto, string userId)
     {
-        var vendor = _vendorCollection.Find(vendor => vendor.Owner == userId).FirstOrDefaultAsync().Result;
+        var vendor = await _vendorCollection.Find(vendor => vendor.Owner == userId).FirstOrDefaultAsync();
+
+        if (vendor == null)
+        {
+            return null;
+        }
+
         var productEntity = _mapper.Map<Product>(productRequestDto);
         productEntity.VendorId = vendor.Id;
+
         productEntity.Images ??= [];
         productEntity.CreatedAt = DateTime.UtcNow;
         productEntity.UpdatedAt = DateTime.UtcNow;
-        await _productCollection.InsertOneAsync(productEntity);
 
+        await _productCollection.InsertOneAsync(productEntity);
         var filter = Builders<Vendor>.Filter.Eq(v => v.Id, vendor.Id);
         var updateDefinition = Builders<Vendor>.Update.AddToSet(v => v.Products, productEntity.Id);
-        var result = await _vendorCollection.UpdateOneAsync(filter, updateDefinition);
+        var updateResult = await _vendorCollection.UpdateOneAsync(filter, updateDefinition);
 
-        if (result.ModifiedCount == 0)
+        if (updateResult.ModifiedCount == 0)
         {
             await _productCollection.DeleteOneAsync(Builders<Product>.Filter.Eq(p => p.Id, productEntity.Id));
             return null;
         }
         return _mapper.Map<ProductResponseDto>(productEntity);
     }
+
 
     public async Task<ProductResponseDto?> UpdateProductAsync(string productId, ProductRequestDto productRequestDto)
     {
@@ -75,19 +131,19 @@ public class ProductService : IProductService
         }
         if (productRequestDto.Price != null)
         {
-            updates.Add(updateDefinition.Set(c => c.Price, productRequestDto.Price));
+            updates.Add(updateDefinition.Set(c => c.Price, productRequestDto.Price.Value));
         }
         if (productRequestDto.IsActive != null)
         {
-            updates.Add(updateDefinition.Set(c => c.IsActive, productRequestDto.IsActive));
+            updates.Add(updateDefinition.Set(c => c.IsActive, productRequestDto.IsActive.Value));
         }
         if (productRequestDto.InventoryCount != null)
         {
-            updates.Add(updateDefinition.Set(c => c.InventoryCount, productRequestDto.InventoryCount));
+            updates.Add(updateDefinition.Set(c => c.InventoryCount, productRequestDto.InventoryCount.Value));
         }
         if (productRequestDto.LowStockAlert != null)
         {
-            updates.Add(updateDefinition.Set(c => c.LowStockAlert, productRequestDto.LowStockAlert));
+            updates.Add(updateDefinition.Set(c => c.LowStockAlert, productRequestDto.LowStockAlert.Value));
         }
         updates.Add(updateDefinition.Set(c => c.UpdatedAt, DateTime.UtcNow));
 
@@ -98,12 +154,29 @@ public class ProductService : IProductService
 
             if (result.ModifiedCount > 0)
             {
-                var updatedCategory = await _productCollection.Find(c => c.Id == productId).FirstOrDefaultAsync();
-                return _mapper.Map<ProductResponseDto>(updatedCategory);
+                var updatedProduct = await _productCollection.Find(c => c.Id == productId).FirstOrDefaultAsync();
+
+                if (updatedProduct != null)
+                {
+                    var category = await _categoryCollection.Find(c => c.Id == updatedProduct.CategoryId).FirstOrDefaultAsync();
+                    var productResponse = _mapper.Map<ProductResponseDto>(updatedProduct);
+
+                    if (category != null)
+                    {
+                        productResponse.Category = new CategoryDto
+                        {
+                            Id = category.Id,
+                            Name = category.Name,
+                            IsActive = category.IsActive.Value
+                        };
+                    }
+                    return productResponse;
+                }
             }
         }
         return null;
     }
+
 
     public async Task<bool> DeleteProductAsync(string productId, string userId)
     {

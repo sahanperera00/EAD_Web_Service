@@ -10,4 +10,6 @@ public class OrderDto
     public List<OrderItemDto>? Items { get; set; }
     public decimal? TotalPrice { get; set; }
     public string? Status { get; set; }
+    public bool? IsCancelRequested { get; set; }
+    public string? Note { get; set; }
 }

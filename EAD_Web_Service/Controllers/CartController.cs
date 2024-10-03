@@ -28,7 +28,7 @@ public class CartController(ICartService _cartService) : ControllerBase
         {
             return NotFound("Invalid cart");
         }
-        return response;
+        return Ok(response);
     }
 
     [HttpPost]
@@ -48,7 +48,7 @@ public class CartController(ICartService _cartService) : ControllerBase
         {
             return StatusCode(StatusCodes.Status500InternalServerError, "Failed to create the cart");
         }
-        return Ok("Cart created successfully");
+        return Ok(response);
     }
 
     [HttpPost("addItem/{productId}")]

@@ -47,7 +47,7 @@ public class OrderService : IOrderService
     {
         orderDto.Id = null;
         var order = _mapper.Map<Order>(orderDto);
-        order.Status = OrderStatus.Processing;
+        order.Note = string.Empty;
         order.CreatedAt = DateTime.Now;
         order.UpdatedAt = DateTime.Now;
 
