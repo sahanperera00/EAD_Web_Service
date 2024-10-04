@@ -7,6 +7,7 @@ using EAD_Web_Service.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Runtime.InteropServices;
 
 namespace EAD_Web_Service.Services.Impl;
 
@@ -15,6 +16,7 @@ public class OrderService : IOrderService
     private readonly IMongoCollection<Order> _orderCollection;
     private readonly IMongoCollection<Product> _productCollection;
     private readonly IMapper _mapper;
+    private readonly ProductService _productService;
 
     public OrderService(IOptions<DatabaseSettings> databaseSettings, IMapper mapper)
     {
@@ -23,6 +25,7 @@ public class OrderService : IOrderService
         _orderCollection = mongoDatabase.GetCollection<Order>(databaseSettings.Value.OrdersCollectionName);
         _productCollection = mongoDatabase.GetCollection<Product>(databaseSettings.Value.ProductsCollectionName);
         _mapper = mapper;
+        _productService = new ProductService(databaseSettings, mapper);
     }
 
     public async Task<List<OrderDto>> GetAllOrdersAsync()
@@ -61,6 +64,7 @@ public class OrderService : IOrderService
                 {
                     item.Id = ObjectId.GenerateNewId().ToString();
                 }
+                await UpdateProductInventoryAsync(item.ProductId, item.Quantity);
             }
         }
         await _orderCollection.InsertOneAsync(order);
@@ -138,9 +142,18 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.Canceled;
         order.UpdatedAt = DateTime.UtcNow;
 
+        if (order.Items != null)
+        {
+            foreach (var item in order.Items)
+            {
+                item.Status = ItemStatus.Canceled;
+                await RestoreProductInventoryAsync(item.ProductId, item.Quantity);
+            }
+        }
         await _orderCollection.ReplaceOneAsync(o => o.Id == orderId, order);
         return true;
     }
+
 
     public async Task<bool> RequestOrderCancellationAsync(string orderId, CancelOrderRequestDto cancelOrderRequestDto)
     {
@@ -180,10 +193,11 @@ public class OrderService : IOrderService
 
     public async Task<bool> UpdateOrderItemStatusAsync(string orderItemId, ItemStatus newStatus)
     {
+        System.Diagnostics.Debug.WriteLine(newStatus + " " + newStatus);
         var filter = Builders<Order>.Filter.ElemMatch(o => o.Items, Builders<OrderItem>.Filter.Eq(oi => oi.Id, orderItemId));
         var order = await _orderCollection.Find(filter).FirstOrDefaultAsync();
 
-        if (order == null || order.IsCancelRequested) { return false; }
+        if (order == null || (order.IsCancelRequested && newStatus == ItemStatus.Delivered)) { return false; }
 
         var update = Builders<Order>.Update
             .Set("items.$.status", newStatus)
@@ -244,8 +258,38 @@ public class OrderService : IOrderService
         else if (newStatus == OrderStatus.Canceled)
         {
             await _orderCollection.UpdateManyAsync(filter, 
-                Builders<Order>.Update.Set("items.$[].status", ItemStatus.Cancelled));
+                Builders<Order>.Update.Set("items.$[].status", ItemStatus.Canceled));
         }
         return result.ModifiedCount > 0;
     }
+
+    private async Task UpdateProductInventoryAsync(string productId, int quantity)
+    {
+        var product = await _productCollection.Find(p => p.Id == productId).FirstOrDefaultAsync() ?? throw new Exception("Product not found");
+        var newInventoryCount = product.InventoryCount - quantity;
+        
+        if (newInventoryCount < 0)
+        {
+            throw new Exception("Insufficient stock for product: " + productId);
+        }
+
+        var productRequest = new ProductRequestDto
+        {
+            InventoryCount = newInventoryCount
+        };
+        await _productService.UpdateProductAsync(productId, productRequest);
+    }
+
+    private async Task RestoreProductInventoryAsync(string productId, int quantity)
+    {
+        var product = await _productCollection.Find(p => p.Id == productId).FirstOrDefaultAsync() ?? throw new Exception("Product not found");
+        var newInventoryCount = product.InventoryCount + quantity;
+
+        var productRequest = new ProductRequestDto
+        {
+            InventoryCount = newInventoryCount
+        };
+        await _productService.UpdateProductAsync(productId, productRequest);
+    }
+
 }

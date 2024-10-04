@@ -4,5 +4,5 @@ public enum ItemStatus
 {
     Processing,
     Delivered,
-    Cancelled
+    Canceled
 }

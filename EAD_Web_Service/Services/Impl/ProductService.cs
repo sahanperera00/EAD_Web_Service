@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using EAD_Web_Service.Dtos;
 using EAD_Web_Service.Dtos.request;
 using EAD_Web_Service.Dtos.response;
 using EAD_Web_Service.Models;
@@ -24,6 +23,10 @@ public class ProductService : IProductService
         _vendorCollection = mongoDatabase.GetCollection<Vendor>(databaseSettings.Value.VendorsCollectionName);
         _categoryCollection = mongoDatabase.GetCollection<Category>(databaseSettings.Value.CategoriesCollectionName);
         _mapper = mapper;
+    }
+
+    public ProductService()
+    {
     }
 
     public async Task<List<ProductResponseDto>> GetAllProductsAsync()
@@ -145,6 +148,7 @@ public class ProductService : IProductService
         {
             updates.Add(updateDefinition.Set(c => c.LowStockAlert, productRequestDto.LowStockAlert.Value));
         }
+
         updates.Add(updateDefinition.Set(c => c.UpdatedAt, DateTime.UtcNow));
 
         if (updates.Count > 0)
@@ -154,29 +158,31 @@ public class ProductService : IProductService
 
             if (result.ModifiedCount > 0)
             {
-                var updatedProduct = await _productCollection.Find(c => c.Id == productId).FirstOrDefaultAsync();
-
-                if (updatedProduct != null)
+                var aggregationPipeline = new[]
                 {
-                    var category = await _categoryCollection.Find(c => c.Id == updatedProduct.CategoryId).FirstOrDefaultAsync();
-                    var productResponse = _mapper.Map<ProductResponseDto>(updatedProduct);
-
-                    if (category != null)
+                    new BsonDocument("$match", new BsonDocument("_id", new ObjectId(productId))),
+                
+                    new BsonDocument("$lookup", new BsonDocument
                     {
-                        productResponse.Category = new CategoryDto
-                        {
-                            Id = category.Id,
-                            Name = category.Name,
-                            IsActive = category.IsActive.Value
-                        };
-                    }
+                        { "from", "Categories" },
+                        { "localField", "categoryId" },
+                        { "foreignField", "_id" },
+                        { "as", "category" }
+                    }),
+                    new BsonDocument("$unwind", "$category")
+                };
+
+                var updatedProductDoc = await _productCollection.Aggregate<BsonDocument>(aggregationPipeline).FirstOrDefaultAsync();
+
+                if (updatedProductDoc != null)
+                {
+                    var productResponse = _mapper.Map<ProductResponseDto>(updatedProductDoc);
                     return productResponse;
                 }
             }
         }
         return null;
     }
-
 
     public async Task<bool> DeleteProductAsync(string productId, string userId)
     {

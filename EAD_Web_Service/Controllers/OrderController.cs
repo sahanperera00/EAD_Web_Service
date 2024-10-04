@@ -9,7 +9,7 @@ namespace EAD_Web_Service.Controllers;
 
 [Route("api/order")]
 [ApiController]
-public class OrderController(IOrderService _orderService, ICartService _cartService) : ControllerBase
+public class OrderController(IOrderService _orderService, ICartService _cartService, IProductService _productService) : ControllerBase
 {
     [HttpGet]
     [Authorize(Roles = "Admin,CSR")]

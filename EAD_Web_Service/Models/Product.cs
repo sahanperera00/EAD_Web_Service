@@ -28,7 +28,7 @@ public class Product
     [BsonElement("lowStockAlert")]
     public int? LowStockAlert { get; set; }
     [BsonElement("images")]
-    public string[]? Images { get; set; }
+    public List<string>? Images { get; set; }
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; }
     [BsonElement("updatedAt")]

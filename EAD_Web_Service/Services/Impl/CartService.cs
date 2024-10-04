@@ -72,7 +72,8 @@ public class CartService : ICartService
                 Name = product.Name,
                 Quantity = quantity,
                 InventoryCount = product.InventoryCount.Value,
-                Price = product.Price
+                Price = product.Price,
+                Images = product.Images
             };
             cart.Items?.Add(newCartItem);
             cart.TotalPrice += product.Price * quantity;
