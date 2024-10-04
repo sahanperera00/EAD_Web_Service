@@ -13,7 +13,7 @@ public interface IOrderService
     Task<OrderDto> CreateOrderAsync(string userId, OrderRequestDto orderRequestDto, CartDto cart);
     Task<OrderDto?> UpdateOrderAsync(string orderId, OrderDto OrderDto);
     Task<bool> CancelOrderAsync(string orderId);
-    Task<bool> RequestOrderCancellationAsync(CancelOrderRequestDto cancelOrderRequestDto);
+    Task<bool> RequestOrderCancellationAsync(string orderId, CancelOrderRequestDto cancelOrderRequestDto);
     Task<List<OrderItemDto>> GetOrderItemsByVendorIdAsync(string vendorId);
     Task<bool> UpdateOrderItemStatusAsync(string orderItemId, ItemStatus newStatus);
     Task<bool> UpdateOrderStatusAsync(string orderId, OrderStatus newStatus);

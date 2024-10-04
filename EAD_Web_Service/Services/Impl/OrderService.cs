@@ -142,9 +142,9 @@ public class OrderService : IOrderService
         return true;
     }
 
-    public async Task<bool> RequestOrderCancellationAsync(CancelOrderRequestDto cancelOrderRequestDto)
+    public async Task<bool> RequestOrderCancellationAsync(string orderId, CancelOrderRequestDto cancelOrderRequestDto)
     {
-        var filter = Builders<Order>.Filter.Where(o => o.Id == cancelOrderRequestDto.orderId && o.Status == OrderStatus.Processing);
+        var filter = Builders<Order>.Filter.Where(o => o.Id == orderId && o.Status == OrderStatus.Processing);
 
         var update = Builders<Order>.Update
             .Set(o => o.IsCancelRequested, true)

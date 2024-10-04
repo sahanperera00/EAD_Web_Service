@@ -90,10 +90,10 @@ public class OrderController(IOrderService _orderService, ICartService _cartServ
         return Ok("Order canceled successfully.");
     }
 
-    [HttpPost("cancelOrderRequest")]
-    public async Task<IActionResult> CancelOrder([FromBody] CancelOrderRequestDto request)
+    [HttpPost("cancelOrderRequest/{orderId}")]
+    public async Task<IActionResult> CancelOrderRequest(string orderId, CancelOrderRequestDto request)
     {
-        var isCancellationRequested = await _orderService.RequestOrderCancellationAsync(request);
+        var isCancellationRequested = await _orderService.RequestOrderCancellationAsync(orderId, request);
 
         if (!isCancellationRequested)
         {
