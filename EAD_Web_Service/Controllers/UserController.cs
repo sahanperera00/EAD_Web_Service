@@ -28,6 +28,19 @@ public class UserController(IUserService _userService, IVendorService _vendorSer
         return response;
     }
 
+    [HttpGet("currentUser")]
+    public async Task<ActionResult<UserResponseDto>> GetCurrentUserById()
+    {
+        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var response = await _userService.GetUserByIdAsync(id);
+
+        if (response == null)
+        {
+            return NotFound("User not found");
+        }
+        return response;
+    }
+
     [HttpPost("register")]
     public async Task<IActionResult> CreateUser(UserRequestDto userDto)
     {
