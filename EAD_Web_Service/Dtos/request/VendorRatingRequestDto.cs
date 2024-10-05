@@ -2,7 +2,6 @@
 
 public class VendorRatingRequestDto
 {
-    public required string CustomerId { get; set; }
     public double Rating { get; set; }
-    public required string Comment { get; set; }
+    public string Comment { get; set; }
 }

@@ -3,6 +3,7 @@ using EAD_Web_Service.Dtos.response;
 using EAD_Web_Service.Models;
 using EAD_Web_Service.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EAD_Web_Service.Controllers;
 
@@ -29,7 +30,8 @@ public class VendorController(IVendorService _vendorService) : ControllerBase
     [HttpPost("{vendorId}/rating")]
     public async Task<IActionResult> AddVendorRating(string vendorId, [FromBody] VendorRatingRequestDto request)
     {
-        var result = await _vendorService.AddVendorRatingAsync(vendorId, request.CustomerId, request.Rating, request.Comment);
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var result = await _vendorService.AddVendorRatingAsync(vendorId, currentUserId, request.Rating, request.Comment);
 
         if (!result)
         {
@@ -42,7 +44,8 @@ public class VendorController(IVendorService _vendorService) : ControllerBase
     [HttpPut("{vendorId}/comment")]
     public async Task<IActionResult> UpdateVendorComment(string vendorId, [FromBody] VendorRatingRequestDto request)
     {
-        var result = await _vendorService.UpdateVendorCommentAsync(vendorId, request.CustomerId, request.Comment);
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var result = await _vendorService.UpdateVendorCommentAsync(vendorId, currentUserId, request.Comment);
 
         if (!result)
         {

@@ -85,7 +85,7 @@ public class VendorService : IVendorService
         var vendor = await _vendorCollection.Find(v => v.Id == vendorId).FirstOrDefaultAsync();
         if (vendor == null) return false;
 
-        var hasAlreadyRated = vendor.Comments.Any(c => c.CustomerId == new ObjectId(customerId));
+        var hasAlreadyRated = vendor.Comments.Any(c => c.CustomerId == customerId);
         if (hasAlreadyRated)
         {
             return false; 
@@ -93,7 +93,7 @@ public class VendorService : IVendorService
 
         var newComment = new VendorComment
         {
-            CustomerId = new ObjectId(customerId),
+            CustomerId = customerId,
             Comment = comment,
             CreatedAt = DateTime.UtcNow
         };
@@ -113,10 +113,10 @@ public class VendorService : IVendorService
 
     public async Task<bool> UpdateVendorCommentAsync(string vendorId, string customerId, string updatedComment)
     {
-        var filter = Builders<Vendor>.Filter.Where(v => v.Id == vendorId && v.Comments.Any(c => c.CustomerId == new ObjectId(customerId)));
+        var filter = Builders<Vendor>.Filter.Where(v => v.Id == vendorId && v.Comments.Any(c => c.CustomerId == customerId));
 
         var update = Builders<Vendor>.Update
-            .Set(v => v.Comments[-1].Comment, updatedComment) 
+            .Set("Comments.$.Comment", updatedComment)
             .Set(v => v.UpdatedAt, DateTime.Now); 
 
         var result = await _vendorCollection.UpdateOneAsync(filter, update);
