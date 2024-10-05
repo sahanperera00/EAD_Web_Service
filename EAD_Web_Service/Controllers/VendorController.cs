@@ -2,6 +2,7 @@
 using EAD_Web_Service.Dtos.response;
 using EAD_Web_Service.Models;
 using EAD_Web_Service.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -22,7 +23,21 @@ public class VendorController(IVendorService _vendorService) : ControllerBase
 
         if (response == null)
         {
-            return NotFound("Invalid category");
+            return NotFound("Invalid vendor");
+        }
+        return response;
+    }
+
+    [HttpGet("currentUser")]
+    [Authorize(Roles = "Vendor")]
+    public async Task<ActionResult<VendorResponseDto>> GetVendorByUserId()
+    {
+        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var response = await _vendorService.GetVendorByUserIdAsync(currentUserId);
+
+        if (response == null)
+        {
+            return NotFound("Invalid vendor");
         }
         return response;
     }
