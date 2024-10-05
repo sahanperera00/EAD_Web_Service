@@ -24,7 +24,7 @@ public class TokenService(IConfiguration configuration)
                 new Claim(ClaimTypes.NameIdentifier, id), 
                 new Claim(ClaimTypes.Email, email), 
                 new Claim(ClaimTypes.Role, role)]),
-            Expires = DateTime.UtcNow.AddHours(1),
+            Expires = DateTime.UtcNow.AddHours(24),
             SigningCredentials = credentials
         };
 
