@@ -48,8 +48,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Average, opt => opt.MapFrom(src => src["average"].ToDouble()))
             .ForMember(dest => dest.TotalReviews, opt => opt.MapFrom(src => src["total_reviews"].AsInt32));
         CreateMap<BsonDocument, VendorComment>()
-            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src["customerId"].AsObjectId))
+            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src["customerId"].IsObjectId ? src["customerId"].AsObjectId.ToString() : src["customerId"].AsString))
             .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src["comment"].AsString))
             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src["createdAt"].ToUniversalTime()));
+
     }
 }
