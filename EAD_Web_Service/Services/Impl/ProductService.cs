@@ -95,13 +95,14 @@ public class ProductService : IProductService
         }
 
         var productEntity = _mapper.Map<Product>(productRequestDto);
-        productEntity.VendorId = vendor.Id;
 
+        productEntity.VendorId = vendor.Id;
         productEntity.Images ??= [];
         productEntity.CreatedAt = DateTime.UtcNow;
         productEntity.UpdatedAt = DateTime.UtcNow;
 
         await _productCollection.InsertOneAsync(productEntity);
+
         var filter = Builders<Vendor>.Filter.Eq(v => v.Id, vendor.Id);
         var updateDefinition = Builders<Vendor>.Update.AddToSet(v => v.Products, productEntity.Id);
         var updateResult = await _vendorCollection.UpdateOneAsync(filter, updateDefinition);
@@ -212,12 +213,41 @@ public class ProductService : IProductService
 
     public async Task<List<ProductResponseDto>> GetProductsByVendorIdAsync(string vendorId)
     {
-        var products = await _productCollection.Find(product => product.VendorId == vendorId).ToListAsync();
+        var aggregationPipeline = new[]
+        {
+            new BsonDocument("$match", new BsonDocument("vendorId", new ObjectId(vendorId))),
+
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Categories" },
+                { "localField", "categoryId" },
+                { "foreignField", "_id" },
+                { "as", "category" }
+            }),
+            new BsonDocument("$unwind", "$category")
+        };
+        var products = await _productCollection.Aggregate<BsonDocument>(aggregationPipeline).ToListAsync();
         return _mapper.Map<List<ProductResponseDto>>(products);
     }
+
     public async Task<List<ProductResponseDto>> GetProductsByCategoryIdAsync(string categoryId)
     {
-        var products = await _productCollection.Find(product => product.CategoryId == categoryId).ToListAsync();
+        var aggregationPipeline = new[]
+        {
+            new BsonDocument("$match", new BsonDocument("categoryId", new ObjectId(categoryId))),
+
+            new BsonDocument("$lookup", new BsonDocument
+            {
+                { "from", "Categories" },
+                { "localField", "categoryId" },
+                { "foreignField", "_id" },
+                { "as", "category" }
+            }),
+
+            new BsonDocument("$unwind", "$category")
+        };
+
+        var products = await _productCollection.Aggregate<BsonDocument>(aggregationPipeline).ToListAsync();
         return _mapper.Map<List<ProductResponseDto>>(products);
     }
 }
