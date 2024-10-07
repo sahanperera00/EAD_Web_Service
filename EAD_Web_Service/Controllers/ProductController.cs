@@ -53,7 +53,7 @@ public class ProductController(IProductService _productService, IVendorService _
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Vendor")]
+    [Authorize(Roles = "Admin,CSR,Vendor")]
     public async Task<IActionResult> UpdateProduct(string id, ProductRequestDto productRequestDto)
     {
         if (productRequestDto == null)
